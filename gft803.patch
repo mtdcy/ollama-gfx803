@@ -1,0 +1,106 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 940c5916..070abbfb 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -96,7 +96,7 @@ if(CMAKE_HIP_COMPILER)
+ 
+     find_package(hip REQUIRED)
+     if(NOT AMDGPU_TARGETS)
+-        list(FILTER AMDGPU_TARGETS INCLUDE REGEX "^gfx(900|94[012]|101[02]|1030|110[012])$")
++        list(FILTER AMDGPU_TARGETS INCLUDE REGEX "^gfx(803|900|94[012]|101[02]|1030|110[012])$")
+     elseif(WIN32 AND WINDOWS_AMDGPU_TARGETS_EXCLUDE_REGEX)
+         list(FILTER AMDGPU_TARGETS EXCLUDE REGEX ${WINDOWS_AMDGPU_TARGETS_EXCLUDE_REGEX})
+     endif()
+diff --git a/CMakePresets.json b/CMakePresets.json
+index c789ad7f..3ecb0a8f 100644
+--- a/CMakePresets.json
++++ b/CMakePresets.json
+@@ -56,7 +56,7 @@
+       "name": "ROCm 6",
+       "inherits": [ "ROCm" ],
+       "cacheVariables": {
+-        "AMDGPU_TARGETS": "gfx900;gfx940;gfx941;gfx942;gfx1010;gfx1012;gfx1030;gfx1100;gfx1101;gfx1102;gfx906:xnack-;gfx908:xnack-;gfx90a:xnack+;gfx90a:xnack-"
++        "AMDGPU_TARGETS": "gfx803;gfx900;gfx940;gfx941;gfx942;gfx1010;gfx1012;gfx1030;gfx1100;gfx1101;gfx1102;gfx906:xnack-;gfx908:xnack-;gfx90a:xnack+;gfx90a:xnack-"
+       }
+     }
+   ],
+diff --git a/discover/amd_linux.go b/discover/amd_linux.go
+index 830fa1df..2f61d595 100644
+--- a/discover/amd_linux.go
++++ b/discover/amd_linux.go
+@@ -42,7 +42,7 @@ const (
+ 
+ var (
+ 	// Used to validate if the given ROCm lib is usable
+-	ROCmLibGlobs          = []string{"libhipblas.so.2*", "rocblas"} // TODO - probably include more coverage of files here...
++	ROCmLibGlobs          = []string{"libhipblas.so.*", "rocblas"} // TODO - probably include more coverage of files here...
+ 	RocmStandardLocations = []string{"/opt/rocm/lib", "/usr/lib64"}
+ )
+ 
+diff --git a/discover/gpu.go b/discover/gpu.go
+index ba906a18..38895e70 100644
+--- a/discover/gpu.go
++++ b/discover/gpu.go
+@@ -70,7 +70,7 @@ var (
+ 	CudaComputeMinorMin = "0"
+ )
+ 
+-var RocmComputeMajorMin = "9"
++var RocmComputeMajorMin = "8"
+ 
+ // TODO find a better way to detect iGPU instead of minimum memory
+ const IGPUMemLimit = 1 * format.GibiByte // 512G is what they typically report, so anything less than 1G must be iGPU
+diff --git a/go.mod b/go.mod
+index 1c99c094..0cbe0790 100644
+--- a/go.mod
++++ b/go.mod
+@@ -1,6 +1,6 @@
+ module github.com/ollama/ollama
+ 
+-go 1.23.4
++go 1.23
+ 
+ require (
+ 	github.com/containerd/console v1.0.3
+diff --git a/ml/backend/ggml/ggml/src/ggml-cuda/common.cuh b/ml/backend/ggml/ggml/src/ggml-cuda/common.cuh
+index 2c0a5622..3c6c2b9d 100644
+--- a/ml/backend/ggml/ggml/src/ggml-cuda/common.cuh
++++ b/ml/backend/ggml/ggml/src/ggml-cuda/common.cuh
+@@ -251,11 +251,11 @@ static __device__ __forceinline__ float warp_reduce_max(float x) {
+ static __device__ __forceinline__ half ggml_cuda_hmax(const half a, const half b) {
+ #ifdef FP16_AVAILABLE
+ 
+-#if !(defined(GGML_USE_HIP) && defined(__HIP_PLATFORM_AMD__)) && CUDART_VERSION < CUDART_HMAX
++//#if !(defined(GGML_USE_HIP) && defined(__HIP_PLATFORM_AMD__)) && CUDART_VERSION < CUDART_HMAX
+     return __float2half(fmaxf(__half2float(a), __half2float(b)));
+-#else
+-    return __hmax(a, b);
+-#endif // !(defined(GGML_USE_HIP) && defined(__HIP_PLATFORM_AMD__)) && CUDART_VERSION < CUDART_HMAX
++//#else
++//    return __hmax(a, b);
++//#endif // !(defined(GGML_USE_HIP) && defined(__HIP_PLATFORM_AMD__)) && CUDART_VERSION < CUDART_HMAX
+ 
+ #else
+    NO_DEVICE_CODE;
+@@ -267,14 +267,14 @@ static __device__ __forceinline__ half ggml_cuda_hmax(const half a, const half b
+ static __device__ __forceinline__ half2 ggml_cuda_hmax2(const half2 a, const half2 b) {
+ #if !(defined(GGML_USE_HIP) && defined(__HIP_PLATFORM_AMD__))
+ 
+-#if CUDART_VERSION >= CUDART_HMAX
++//#if CUDART_VERSION >= CUDART_HMAX
+     return __hmax2(a, b);
+-#else
+-    half2 ret;
+-    reinterpret_cast<half&>(ret.x) = __float2half(fmaxf( __low2float(a),  __low2float(b)));
+-    reinterpret_cast<half&>(ret.y) = __float2half(fmaxf(__high2float(a), __high2float(b)));
+-    return ret;
+-#endif // CUDART_VERSION >= CUDART_HMAX
++//#else
++//    half2 ret;
++//    reinterpret_cast<half&>(ret.x) = __float2half(fmaxf( __low2float(a),  __low2float(b)));
++//    reinterpret_cast<half&>(ret.y) = __float2half(fmaxf(__high2float(a), __high2float(b)));
++//    return ret;
++//#endif // CUDART_VERSION >= CUDART_HMAX
+ 
+ #else
+     GGML_UNUSED(a);
