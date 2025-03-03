@@ -22,6 +22,9 @@ sudo apt install -y libstdc++-12-dev
 dpkg-deb -x rocblas_2.46.0.50401-84.20.04_amd64.deb .
 sudo rsync -av ./opt/ /opt/
 
+# install missing cmake files
+sudo rsync -av ./cmake/ /opt/rocm/lib/cmake/
+
 # install newer go
 #wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
