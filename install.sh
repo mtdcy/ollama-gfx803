@@ -54,11 +54,13 @@ ninja -C build
 sudo cmake --install build
 
 go build
+
+sudo systemctl disable ollama.service --now || true
 sudo cp ollama /usr/local/bin
 
 sudo cp ../ollama.service /etc/systemd/system/ollama.service
 
-sudo useradd -r -s /bin/false -U -m -d /home/ollama ollama
+sudo useradd -r -s /bin/false -U -m -d /home/ollama ollama || true
 sudo usermod -aG render,video ollama
 sudo chown -R ollama:ollama /usr/local/lib/ollama
 sudo chmod -R 0755 /usr/local/lib/ollama /usr/local/bin/ollama
