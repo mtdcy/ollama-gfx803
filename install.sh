@@ -12,7 +12,7 @@ sudo usermod -a -G render,video "$LOGNAME"
 # install rocm
 #wget https://repo.radeon.com/amdgpu-install/5.4.1/ubuntu/jammy/amdgpu-install_5.4.50401-1_all.deb
 sudo apt install -y ./amdgpu-install_5.4.50401-1_all.deb
-amdgpu-install --usecase=rocmdev
+amdgpu-install --usecase=rocm,rocmdev,opencl,openclsdk,hiplibsdk,mllib,mlsdk
 
 # fix missing headers
 sudo apt install -y libstdc++-12-dev
@@ -43,6 +43,7 @@ if [ ! -d ollama ]; then
     patch -p1 -N -r - < ../gfx803.patch
 else
     cd ollama
+    rm -rf build # start a fresh build
 fi
 
 # checkout branch if you want
